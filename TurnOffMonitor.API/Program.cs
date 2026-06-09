@@ -1,41 +1,54 @@
+using Serilog;
+using TurnOffMonitor.API.Config;
+using TurnOffMonitor.API.Endpoints;
+using TurnOffMonitor.API.Services;
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .WriteTo.File(
+        path: "logs/turnoffmonitor-.txt",
+        rollingInterval: RollingInterval.Day,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+    )
+    .CreateLogger();
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+if (!System.Security.Principal.WindowsIdentity.GetCurrent().Owner!
+    .IsWellKnown(System.Security.Principal.WellKnownSidType.BuiltinAdministratorsSid))
+{
+    Log.Warning("La app no está corriendo como administrador. Algunos sensores pueden no funcionar.");
+}
+
+builder.Host.UseSerilog();
+
 builder.Services.AddOpenApi();
+
+builder.Services.AddSingleton<ConfigService>();
+builder.Services.AddSingleton<HardwareService>();
+builder.Services.AddSingleton<MonitorService>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<MonitorService>());
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("ReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
+app.UseCors("ReactApp");
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.MapMonitorEndpoints();
 
 app.Run();
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
