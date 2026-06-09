@@ -1,0 +1,4 @@
+{
+  "CpuThreshold": 30,
+  "GpuThreshold": 30
+}

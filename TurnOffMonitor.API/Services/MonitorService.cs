@@ -38,7 +38,8 @@ public class MonitorService : BackgroundService
                         config.CpuThreshold, config.GpuThreshold
                     );
 
-                    if (temps.CpuTemperature <= config.CpuThreshold &&
+                    if (temps.CpuTemperature > 0 && temps.GpuTemperature > 0 &&
+                        temps.CpuTemperature <= config.CpuThreshold &&
                         temps.GpuTemperature <= config.GpuThreshold)
                     {
                         _logger.LogInformation("Temperaturas bajo el umbral. Apagando PC...");
