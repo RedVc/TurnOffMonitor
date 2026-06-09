@@ -29,8 +29,8 @@ public class MonitorService : BackgroundService
             {
                 try
                 {
-                    var temps = _hardwareService.GetTemperatures();
                     var config = _configService.Load();
+                    var temps = _hardwareService.GetTemperatures(config);
 
                     _logger.LogInformation(
                         "CPU: {cpu}°C | GPU: {gpu}°C | Umbrales -> CPU: {cpuT}°C GPU: {gpuT}°C",

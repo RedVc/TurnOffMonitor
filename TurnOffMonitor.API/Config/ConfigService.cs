@@ -7,10 +7,15 @@ public class ConfigService
 {
     private readonly string _configPath = "monitor-config.json";
 
-    public MonitorConfig Load()
+    public MonitorConfig Load(string? cpuBrand = null)
     {
         if (!File.Exists(_configPath))
-            return new MonitorConfig();
+        {
+            var defaultConfig = new MonitorConfig();
+            if (cpuBrand != null)
+                defaultConfig.CpuBrand = cpuBrand;
+            return defaultConfig;
+        }
 
         var json = File.ReadAllText(_configPath);
         return JsonSerializer.Deserialize<MonitorConfig>(json) ?? new MonitorConfig();

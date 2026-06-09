@@ -1,4 +1,7 @@
 {
-  "CpuThreshold": 30,
-  "GpuThreshold": 30
+  "CpuThreshold": 10,
+  "GpuThreshold": 10,
+  "CpuBrand": "AMD",
+  "CpuSensorType": "general",
+  "CpuSensorName": ""
 }

@@ -8,9 +8,10 @@ public static class MonitorEndpoints
 {
     public static void MapMonitorEndpoints(this WebApplication app)
     {
-        app.MapGet("/api/temperatures", (HardwareService hardwareService) =>
+        app.MapGet("/api/temperatures", (HardwareService hardwareService, ConfigService configService) =>
         {
-            var temps = hardwareService.GetTemperatures();
+            var config = configService.Load();
+            var temps = hardwareService.GetTemperatures(config);
             return Results.Ok(temps);
         });
 
@@ -24,6 +25,15 @@ public static class MonitorEndpoints
         {
             configService.Save(config);
             return Results.Ok(new { message = "Configuración guardada correctamente" });
+        });
+
+        app.MapGet("/api/hardware/info", (HardwareService hardwareService) =>
+        {
+            return Results.Ok(new
+            {
+                cpuName = hardwareService.GetCpuName(),
+                cpuBrand = hardwareService.GetCpuBrand()
+            });
         });
 
         app.MapPost("/api/monitor/start", (MonitorService monitorService) =>
@@ -41,6 +51,18 @@ public static class MonitorEndpoints
         app.MapGet("/api/monitor/status", (MonitorService monitorService) =>
         {
             return Results.Ok(new { isMonitoring = monitorService.IsMonitoring });
+        });
+
+        app.MapGet("/api/hardware/cpu-sensors", (HardwareService hardwareService) =>
+        {
+            var sensors = hardwareService.GetCpuSensorNames();
+            return Results.Ok(sensors);
+        });
+
+        app.MapGet("/api/hardware/cpu-sensor-readings", (HardwareService hardwareService) =>
+        {
+            var readings = hardwareService.GetCpuSensorReadings();
+            return Results.Ok(readings);
         });
     }
 }
