@@ -14,7 +14,6 @@ public class HardwareService
             IsCpuEnabled = true,
             IsGpuEnabled = true
         };
-        _computer.Open();
     }
 
     public TemperatureReading GetTemperatures(MonitorConfig config)
@@ -28,13 +27,22 @@ public class HardwareService
             if (hardware.HardwareType == HardwareType.Cpu)
                 reading.CpuTemperature = GetCpuTemp(hardware, config);
 
-            if (hardware.HardwareType == HardwareType.GpuNvidia)
+            if (hardware.HardwareType == HardwareType.GpuNvidia ||
+                hardware.HardwareType == HardwareType.GpuAmd ||
+                hardware.HardwareType == HardwareType.GpuIntel)
             {
                 foreach (var sensor in hardware.Sensors)
                 {
-                    if (sensor.SensorType == SensorType.Temperature &&
-                        sensor.Name == "GPU Core" &&
-                        sensor.Value != null)
+                    if (sensor.SensorType != SensorType.Temperature ||
+                        sensor.Name != "GPU Core" ||
+                        sensor.Value == null) continue;
+
+                    if (string.IsNullOrEmpty(config.GpuSensorName))
+                    {
+                        if (hardware.HardwareType == HardwareType.GpuNvidia)
+                            reading.GpuTemperature = sensor.Value.Value;
+                    }
+                    else if (hardware.Name == config.GpuSensorName)
                     {
                         reading.GpuTemperature = sensor.Value.Value;
                     }
@@ -111,5 +119,33 @@ public class HardwareService
             }
         }
         return new List<SensorReading>();
+    }
+
+    public List<SensorReading> GetGpuSensorReadings()
+    {
+        var result = new List<SensorReading>();
+
+        foreach (var hardware in _computer.Hardware)
+        {
+            if (hardware.HardwareType == HardwareType.GpuNvidia ||
+                hardware.HardwareType == HardwareType.GpuAmd ||
+                hardware.HardwareType == HardwareType.GpuIntel)
+            {
+                hardware.Update();
+                var coreSensor = hardware.Sensors
+                    .FirstOrDefault(s => s.SensorType == SensorType.Temperature &&
+                                         s.Name == "GPU Core" &&
+                                         s.Value != null);
+
+                if (coreSensor != null)
+                    result.Add(new SensorReading
+                    {
+                        Name = hardware.Name,
+                        Temperature = coreSensor.Value ?? 0
+                    });
+            }
+        }
+
+        return result;
     }
 }

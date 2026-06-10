@@ -7,4 +7,5 @@ public class MonitorConfig
     public string CpuBrand { get; set; } = "AMD";
     public string CpuSensorType { get; set; } = "general";
     public string CpuSensorName { get; set; } = "";
+    public string GpuSensorName { get; set; } = "";
 }

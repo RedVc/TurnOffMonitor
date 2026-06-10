@@ -3,5 +3,6 @@
   "GpuThreshold": 10,
   "CpuBrand": "AMD",
   "CpuSensorType": "general",
-  "CpuSensorName": ""
+  "CpuSensorName": "",
+  "GpuSensorName": ""
 }

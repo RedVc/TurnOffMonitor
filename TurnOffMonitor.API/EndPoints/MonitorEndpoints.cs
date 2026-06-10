@@ -64,5 +64,11 @@ public static class MonitorEndpoints
             var readings = hardwareService.GetCpuSensorReadings();
             return Results.Ok(readings);
         });
+
+        app.MapGet("/api/hardware/gpu-sensor-readings", (HardwareService hardwareService) =>
+        {
+            var readings = hardwareService.GetGpuSensorReadings();
+            return Results.Ok(readings);
+        });
     }
 }
