@@ -14,6 +14,13 @@ public class HardwareService
             IsCpuEnabled = true,
             IsGpuEnabled = true
         };
+        _computer.Open();
+
+        // Dar tiempo a LibreHardwareMonitor para inicializar los sensores
+        Thread.Sleep(2000);
+
+        foreach (var hardware in _computer.Hardware)
+            hardware.Update();
     }
 
     public TemperatureReading GetTemperatures(MonitorConfig config)
