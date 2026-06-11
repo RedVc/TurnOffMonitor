@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Thermometer, Power, PowerOff, Cpu, Monitor } from "lucide-react";
+import { Power, PowerOff, Cpu, Monitor } from "lucide-react";
+import iconImg from "./assets/icon.png";
 
 const API = "https://localhost:7151";
 
@@ -28,11 +29,11 @@ interface SensorReading {
 }
 
 function getColor(temp: number, threshold: number) {
-  return temp >= threshold ? "text-red-400" : temp >= threshold * 0.85 ? "text-yellow-400" : "text-green-400";
+  return temp >= threshold ? "text-pink-400" : temp >= threshold * 0.85 ? "text-yellow-300" : "text-cyan-400";
 }
 
 function getBar(temp: number, threshold: number) {
-  return temp >= threshold ? "bg-red-500" : temp >= threshold * 0.85 ? "bg-yellow-500" : "bg-green-500";
+  return temp >= threshold ? "bg-pink-500" : temp >= threshold * 0.85 ? "bg-yellow-400" : "bg-cyan-400";
 }
 
 function SensorPanel({ readings, selectedName, canChange, threshold, onSelect }: {
@@ -50,21 +51,21 @@ function SensorPanel({ readings, selectedName, canChange, threshold, onSelect }:
           onClick={() => { if (canChange) onSelect(item.name); }}
           className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-left ${
             selectedName === item.name || (!selectedName && item === readings[0])
-              ? "bg-blue-600/20 border border-blue-500/40"
+              ? "bg-purple-900/40 border border-purple-500/60"
               : canChange
-                ? "bg-zinc-700/50 border border-transparent hover:bg-zinc-700 cursor-pointer"
-                : "bg-zinc-700/30 border border-transparent cursor-default"
+                ? "bg-purple-900/20 border border-purple-800/30 hover:bg-purple-900/40 cursor-pointer"
+                : "bg-purple-900/10 border border-transparent cursor-default"
           }`}
         >
           <div className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${
             selectedName === item.name || (!selectedName && item === readings[0])
-              ? "border-blue-400 bg-blue-400"
-              : "border-zinc-500"
+              ? "border-cyan-400 bg-cyan-400"
+              : "border-purple-500"
           }`} />
-          <span className="text-sm text-white flex-1 truncate">{item.name}</span>
+          <span className="text-sm text-purple-100 flex-1 truncate">{item.name}</span>
           {item.temperature > 0 && (
             <div className="flex items-center gap-2">
-              <div className="w-12 bg-zinc-600 rounded-full h-1.5">
+              <div className="w-12 bg-purple-900 rounded-full h-1.5">
                 <div
                   className={`h-1.5 rounded-full transition-all duration-500 ${getBar(item.temperature, threshold)}`}
                   style={{ width: `${Math.min((item.temperature / 100) * 100, 100)}%` }}
@@ -98,22 +99,11 @@ export default function App() {
 
   useEffect(() => {
     const checkBackend = () => {
-      console.log("Checking backend...");
       fetch(`${API}/api/monitor/status`)
-        .then(r => {
-          console.log("Response status:", r.status);
-          return r.json();
-        })
-        .then(data => {
-          console.log("Backend data:", data);
-          setBackendOnline(true);
-        })
-        .catch(err => {
-          console.log("Backend error:", err);
-          setBackendOnline(false);
-        });
+        .then(r => r.json())
+        .then(() => setBackendOnline(true))
+        .catch(() => setBackendOnline(false));
     };
-
     checkBackend();
     const interval = setInterval(checkBackend, 5000);
     return () => clearInterval(interval);
@@ -121,50 +111,25 @@ export default function App() {
 
   useEffect(() => {
     if (backendOnline !== true) return;
-
-    fetch(`${API}/api/hardware/info`)
-      .then(r => r.json())
-      .then((info: HardwareInfo) => setHardwareInfo(info))
-      .catch(() => {});
-
-    fetch(`${API}/api/config`)
-      .then(r => r.json())
-      .then((c: Config) => {
-        setConfig(c);
-        setCpuInput(c.cpuThreshold.toString());
-        setGpuInput(c.gpuThreshold.toString());
-        setCpuSensorType(c.cpuSensorType);
-        setCpuSensorName(c.cpuSensorName);
-        setGpuSensorName(c.gpuSensorName);
-      })
-      .catch(() => {});
-
-    fetch(`${API}/api/monitor/status`)
-      .then(r => r.json())
-      .then(d => setIsMonitoring(d.isMonitoring))
-      .catch(() => {});
+    fetch(`${API}/api/hardware/info`).then(r => r.json()).then((info: HardwareInfo) => setHardwareInfo(info)).catch(() => {});
+    fetch(`${API}/api/config`).then(r => r.json()).then((c: Config) => {
+      setConfig(c);
+      setCpuInput(c.cpuThreshold.toString());
+      setGpuInput(c.gpuThreshold.toString());
+      setCpuSensorType(c.cpuSensorType);
+      setCpuSensorName(c.cpuSensorName);
+      setGpuSensorName(c.gpuSensorName);
+    }).catch(() => {});
+    fetch(`${API}/api/monitor/status`).then(r => r.json()).then(d => setIsMonitoring(d.isMonitoring)).catch(() => {});
   }, [backendOnline]);
 
   useEffect(() => {
     if (backendOnline !== true) return;
-
     const fetchData = () => {
-      fetch(`${API}/api/temperatures`)
-        .then(r => r.json())
-        .then(setTemps)
-        .catch(() => {});
-
-      fetch(`${API}/api/hardware/cpu-sensor-readings`)
-        .then(r => r.json())
-        .then((readings: SensorReading[]) => setCpuSensorReadings(readings))
-        .catch(() => {});
-
-      fetch(`${API}/api/hardware/gpu-sensor-readings`)
-        .then(r => r.json())
-        .then((readings: SensorReading[]) => setGpuSensorReadings(readings))
-        .catch(() => {});
+      fetch(`${API}/api/temperatures`).then(r => r.json()).then(setTemps).catch(() => {});
+      fetch(`${API}/api/hardware/cpu-sensor-readings`).then(r => r.json()).then((readings: SensorReading[]) => setCpuSensorReadings(readings)).catch(() => {});
+      fetch(`${API}/api/hardware/gpu-sensor-readings`).then(r => r.json()).then((readings: SensorReading[]) => setGpuSensorReadings(readings)).catch(() => {});
     };
-
     fetchData();
     const interval = setInterval(fetchData, 3000);
     return () => clearInterval(interval);
@@ -179,11 +144,7 @@ export default function App() {
       cpuSensorName: cpuSensorType === "specific" ? cpuSensorName : "",
       gpuSensorName
     };
-    await fetch(`${API}/api/config`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newConfig)
-    });
+    await fetch(`${API}/api/config`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newConfig) });
     setConfig(newConfig);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -205,34 +166,28 @@ export default function App() {
 
   if (backendOnline === null) {
     return (
-      <div className="min-h-screen bg-zinc-900 text-white flex flex-col items-center justify-center gap-4">
-        <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-        <p className="text-zinc-400 text-sm">Conectando con el backend...</p>
+      <div className="min-h-screen text-white flex flex-col items-center justify-center gap-4" style={{ background: "linear-gradient(180deg, #0d0221 0%, #1a0533 60%, #3d1066 100%)" }}>
+        <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+        <p className="text-purple-300 text-sm tracking-widest uppercase">Conectando...</p>
       </div>
     );
   }
 
   if (backendOnline === false) {
     return (
-      <div className="min-h-screen bg-zinc-900 text-white flex flex-col items-center justify-center gap-6">
-        <div className="bg-zinc-800 rounded-2xl p-8 flex flex-col items-center gap-4 max-w-sm w-full mx-4">
-          <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
-            <PowerOff size={24} className="text-red-400" />
+      <div className="min-h-screen text-white flex flex-col items-center justify-center gap-6" style={{ background: "linear-gradient(180deg, #0d0221 0%, #1a0533 60%, #3d1066 100%)" }}>
+        <div className="rounded-2xl p-8 flex flex-col items-center gap-4 max-w-sm w-full mx-4" style={{ background: "rgba(26,5,51,0.9)", border: "1px solid rgba(180,0,255,0.4)" }}>
+          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "rgba(255,45,120,0.2)" }}>
+            <PowerOff size={24} className="text-pink-400" />
           </div>
-          <h2 className="text-lg font-semibold">Backend desconectado</h2>
-          <p className="text-zinc-400 text-sm text-center">
-            El servicio de monitoreo no está corriendo. Inicia el backend e intenta de nuevo.
-          </p>
+          <h2 className="text-lg font-semibold text-cyan-300 tracking-widest uppercase">Backend offline</h2>
+          <p className="text-purple-300 text-sm text-center">El servicio de monitoreo no está corriendo. Inicia el backend e intenta de nuevo.</p>
           <button
-            onClick={() => {
-              setBackendOnline(null);
-              fetch(`${API}/api/monitor/status`)
-                .then(() => setBackendOnline(true))
-                .catch(() => setBackendOnline(false));
-            }}
-            className="w-full bg-blue-600 hover:bg-blue-500 transition-colors rounded-lg py-2 text-sm font-medium"
+            onClick={() => { setBackendOnline(null); fetch(`${API}/api/monitor/status`).then(() => setBackendOnline(true)).catch(() => setBackendOnline(false)); }}
+            className="w-full py-2 text-sm font-medium tracking-widest uppercase transition-colors rounded-lg"
+            style={{ background: "linear-gradient(90deg, #b400ff, #ff2d78)", color: "white" }}
           >
-            Reintentar conexión
+            Reintentar
           </button>
         </div>
       </div>
@@ -240,64 +195,73 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-900 text-white flex flex-col items-center justify-center p-8">
+    <div className="min-h-screen text-white flex flex-col items-center justify-center p-8"
+      style={{ background: "linear-gradient(180deg, #0d0221 0%, #1a0533 60%, #3d1066 100%)" }}>
       <div className="w-full max-w-2xl flex flex-col gap-6">
 
+        {/* Header */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <Thermometer className="text-blue-400" size={28} />
-            <h1 className="text-2xl font-bold tracking-tight">TurnOff Monitor</h1>
-            <span className={`ml-auto text-xs px-3 py-1 rounded-full font-medium ${isMonitoring ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-400"}`}>
+            <img src={iconImg} alt="TurnOff Monitor" className="w-16 h-16 rounded-full" />
+            <h1 className="text-2xl font-bold tracking-widest " style={{ color: "#00ffe7", textShadow: "0 0 20px rgba(0,255,231,0.5)" }}>
+              TurnOff Monitor
+            </h1>
+            <span className={`ml-auto text-xs px-3 py-1 rounded-full font-medium tracking-widest uppercase ${
+              isMonitoring
+                ? "text-cyan-300"
+                : "text-purple-400"
+            }`} style={{
+              background: isMonitoring ? "rgba(0,255,231,0.1)" : "rgba(180,0,255,0.1)",
+              border: isMonitoring ? "1px solid rgba(0,255,231,0.3)" : "1px solid rgba(180,0,255,0.3)"
+            }}>
               {isMonitoring ? "Monitoreando" : "Inactivo"}
             </span>
           </div>
           <div className="flex items-center gap-2 pl-9">
-            <Cpu size={13} className="text-zinc-500" />
-            <span className="text-xs text-zinc-500">{hardwareInfo.cpuName}</span>
+            <Cpu size={13} className="text-purple-400" />
+            <span className="text-xs text-purple-400 tracking-widest">{hardwareInfo.cpuName}</span>
           </div>
         </div>
 
-        <div className="bg-zinc-800 rounded-2xl p-6 flex gap-6">
+        {/* CPU */}
+        <div className="rounded-2xl p-6 flex gap-6" style={{ background: "rgba(26,5,51,0.8)", border: "1px solid rgba(180,0,255,0.3)" }}>
           <div className="flex flex-col gap-4 min-w-[160px]">
-            <div className="flex items-center gap-2 text-zinc-400">
+            <div className="flex items-center gap-2 text-purple-400">
               <Cpu size={16} />
               <span className="text-sm font-medium uppercase tracking-widest">CPU</span>
             </div>
-            <div className={`text-5xl font-bold ${getColor(temps.cpuTemperature, config.cpuThreshold)}`}>
+            <div className={`text-5xl font-bold ${getColor(temps.cpuTemperature, config.cpuThreshold)}`}
+              style={{ textShadow: temps.cpuTemperature >= config.cpuThreshold ? "0 0 20px rgba(255,45,120,0.6)" : "0 0 20px rgba(0,255,231,0.4)" }}>
               {temps.cpuTemperature.toFixed(1)}°C
             </div>
-            <div className="w-full bg-zinc-700 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all duration-500 ${getBar(temps.cpuTemperature, config.cpuThreshold)}`}
-                style={{ width: `${Math.min((temps.cpuTemperature / 100) * 100, 100)}%` }}
-              />
+            <div className="w-full rounded-full h-2" style={{ background: "rgba(180,0,255,0.2)" }}>
+              <div className={`h-2 rounded-full transition-all duration-500 ${getBar(temps.cpuTemperature, config.cpuThreshold)}`}
+                style={{ width: `${Math.min((temps.cpuTemperature / 100) * 100, 100)}%` }} />
             </div>
-            <div className="text-zinc-500 text-xs">Umbral: {config.cpuThreshold}°C</div>
+            <div className="text-purple-400 text-xs tracking-widest">Umbral: {config.cpuThreshold}°C</div>
           </div>
-          <div className="w-px bg-zinc-700 self-stretch" />
+          <div className="w-px self-stretch" style={{ background: "rgba(180,0,255,0.3)" }} />
           <div className="flex flex-col gap-2 flex-1">
-            <span className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Sensor</span>
+            <span className="text-xs text-purple-400 uppercase tracking-widest mb-1">Sensor</span>
             {cpuSensorItems.map(item => (
-              <button
-                key={item.name}
+              <button key={item.name}
                 onClick={() => {
                   if (cpuSensorReadings.length <= 1) return;
                   if (item.name === "General") { setCpuSensorType("general"); setCpuSensorName(""); }
                   else { setCpuSensorType("specific"); setCpuSensorName(item.name); }
                 }}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-left ${
-                  isCpuSelected(item.name)
-                    ? "bg-blue-600/20 border border-blue-500/40"
-                    : cpuSensorReadings.length > 1
-                      ? "bg-zinc-700/50 border border-transparent hover:bg-zinc-700 cursor-pointer"
-                      : "bg-zinc-700/30 border border-transparent cursor-default"
-                }`}
-              >
-                <div className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${isCpuSelected(item.name) ? "border-blue-400 bg-blue-400" : "border-zinc-500"}`} />
-                <span className="text-sm text-white flex-1">{item.name}</span>
+                className="flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-left"
+                style={{
+                  background: isCpuSelected(item.name) ? "rgba(180,0,255,0.2)" : "rgba(180,0,255,0.05)",
+                  border: isCpuSelected(item.name) ? "1px solid rgba(0,255,231,0.5)" : "1px solid rgba(180,0,255,0.2)",
+                  cursor: cpuSensorReadings.length > 1 ? "pointer" : "default"
+                }}>
+                <div className="w-3 h-3 rounded-full border-2 flex-shrink-0"
+                  style={{ borderColor: isCpuSelected(item.name) ? "#00ffe7" : "#b400ff", background: isCpuSelected(item.name) ? "#00ffe7" : "transparent" }} />
+                <span className="text-sm text-purple-100 flex-1">{item.name}</span>
                 {item.temperature > 0 && (
                   <div className="flex items-center gap-2">
-                    <div className="w-12 bg-zinc-600 rounded-full h-1.5">
+                    <div className="w-12 rounded-full h-1.5" style={{ background: "rgba(180,0,255,0.3)" }}>
                       <div className={`h-1.5 rounded-full transition-all duration-500 ${getBar(item.temperature, config.cpuThreshold)}`}
                         style={{ width: `${Math.min((item.temperature / 100) * 100, 100)}%` }} />
                     </div>
@@ -311,26 +275,26 @@ export default function App() {
           </div>
         </div>
 
-        <div className="bg-zinc-800 rounded-2xl p-6 flex gap-6">
+        {/* GPU */}
+        <div className="rounded-2xl p-6 flex gap-6" style={{ background: "rgba(26,5,51,0.8)", border: "1px solid rgba(255,45,120,0.3)" }}>
           <div className="flex flex-col gap-4 min-w-[160px]">
-            <div className="flex items-center gap-2 text-zinc-400">
+            <div className="flex items-center gap-2 text-pink-400">
               <Monitor size={16} />
               <span className="text-sm font-medium uppercase tracking-widest">GPU</span>
             </div>
-            <div className={`text-5xl font-bold ${getColor(temps.gpuTemperature, config.gpuThreshold)}`}>
+            <div className={`text-5xl font-bold ${getColor(temps.gpuTemperature, config.gpuThreshold)}`}
+              style={{ textShadow: temps.gpuTemperature >= config.gpuThreshold ? "0 0 20px rgba(255,45,120,0.6)" : "0 0 20px rgba(0,255,231,0.4)" }}>
               {temps.gpuTemperature.toFixed(1)}°C
             </div>
-            <div className="w-full bg-zinc-700 rounded-full h-2">
-              <div
-                className={`h-2 rounded-full transition-all duration-500 ${getBar(temps.gpuTemperature, config.gpuThreshold)}`}
-                style={{ width: `${Math.min((temps.gpuTemperature / 100) * 100, 100)}%` }}
-              />
+            <div className="w-full rounded-full h-2" style={{ background: "rgba(255,45,120,0.2)" }}>
+              <div className={`h-2 rounded-full transition-all duration-500 ${getBar(temps.gpuTemperature, config.gpuThreshold)}`}
+                style={{ width: `${Math.min((temps.gpuTemperature / 100) * 100, 100)}%` }} />
             </div>
-            <div className="text-zinc-500 text-xs">Umbral: {config.gpuThreshold}°C</div>
+            <div className="text-pink-400 text-xs tracking-widest">Umbral: {config.gpuThreshold}°C</div>
           </div>
-          <div className="w-px bg-zinc-700 self-stretch" />
+          <div className="w-px self-stretch" style={{ background: "rgba(255,45,120,0.3)" }} />
           <div className="flex flex-col gap-2 flex-1">
-            <span className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Tarjeta gráfica</span>
+            <span className="text-xs text-pink-400 uppercase tracking-widest mb-1">Tarjeta gráfica</span>
             <SensorPanel
               readings={gpuSensorReadings}
               selectedName={gpuSensorName}
@@ -341,44 +305,38 @@ export default function App() {
           </div>
         </div>
 
-        <div className="bg-zinc-800 rounded-2xl p-6 flex flex-col gap-4">
-          <p className="text-sm text-zinc-400 font-medium uppercase tracking-widest">Umbrales de apagado</p>
+        {/* Umbrales */}
+        <div className="rounded-2xl p-6 flex flex-col gap-4" style={{ background: "rgba(26,5,51,0.8)", border: "1px solid rgba(180,0,255,0.3)" }}>
+          <p className="text-sm text-purple-300 font-medium uppercase tracking-widest">Umbrales de apagado</p>
           <div className="flex gap-4">
             <div className="flex-1 flex flex-col gap-1">
-              <label className="text-xs text-zinc-500">CPU (°C)</label>
-              <input
-                type="number"
-                value={cpuInput}
-                onChange={e => setCpuInput(e.target.value)}
-                className="bg-zinc-700 rounded-lg px-4 py-2 text-white text-sm outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <label className="text-xs text-purple-400 tracking-widest">CPU (°C)</label>
+              <input type="number" value={cpuInput} onChange={e => setCpuInput(e.target.value)}
+                className="rounded-lg px-4 py-2 text-white text-sm outline-none"
+                style={{ background: "rgba(180,0,255,0.15)", border: "1px solid rgba(180,0,255,0.4)" }} />
             </div>
             <div className="flex-1 flex flex-col gap-1">
-              <label className="text-xs text-zinc-500">GPU (°C)</label>
-              <input
-                type="number"
-                value={gpuInput}
-                onChange={e => setGpuInput(e.target.value)}
-                className="bg-zinc-700 rounded-lg px-4 py-2 text-white text-sm outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <label className="text-xs text-pink-400 tracking-widest">GPU (°C)</label>
+              <input type="number" value={gpuInput} onChange={e => setGpuInput(e.target.value)}
+                className="rounded-lg px-4 py-2 text-white text-sm outline-none"
+                style={{ background: "rgba(255,45,120,0.15)", border: "1px solid rgba(255,45,120,0.4)" }} />
             </div>
           </div>
-          <button
-            onClick={saveConfig}
-            className="bg-blue-600 hover:bg-blue-500 transition-colors rounded-lg py-2 text-sm font-medium"
-          >
+          <button onClick={saveConfig}
+            className="py-2 text-sm font-medium tracking-widest uppercase rounded-lg transition-opacity hover:opacity-90"
+            style={{ background: "linear-gradient(90deg, #b400ff, #ff2d78)", color: "white" }}>
             {saved ? "✓ Guardado" : "Guardar configuración"}
           </button>
         </div>
 
-        <button
-          onClick={toggleMonitor}
-          className={`flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-sm transition-colors ${
-            isMonitoring
-              ? "bg-red-600/20 text-red-400 hover:bg-red-600/30"
-              : "bg-green-600/20 text-green-400 hover:bg-green-600/30"
-          }`}
-        >
+        {/* Botón monitoreo */}
+        <button onClick={toggleMonitor}
+          className="flex items-center justify-center gap-2 rounded-2xl py-4 font-semibold text-sm transition-opacity hover:opacity-90 uppercase tracking-widest"
+          style={{
+            background: isMonitoring ? "rgba(255,45,120,0.15)" : "rgba(0,255,231,0.1)",
+            border: isMonitoring ? "1px solid rgba(255,45,120,0.4)" : "1px solid rgba(0,255,231,0.4)",
+            color: isMonitoring ? "#ff6ec7" : "#00ffe7"
+          }}>
           {isMonitoring ? <><PowerOff size={18} /> Detener monitoreo</> : <><Power size={18} /> Iniciar monitoreo</>}
         </button>
 
