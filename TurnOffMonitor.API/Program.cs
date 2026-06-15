@@ -1,7 +1,19 @@
+using System.Runtime.InteropServices;
 using Serilog;
 using TurnOffMonitor.API.Config;
 using TurnOffMonitor.API.Endpoints;
 using TurnOffMonitor.API.Services;
+using Microsoft.AspNetCore.SpaServices.Extensions;
+
+[DllImport("kernel32.dll")]
+static extern IntPtr GetConsoleWindow();
+
+[DllImport("user32.dll")]
+static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+var consoleWindow = GetConsoleWindow();
+if (consoleWindow != IntPtr.Zero)
+    ShowWindow(consoleWindow, 0);
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -13,12 +25,6 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
-
-if (!System.Security.Principal.WindowsIdentity.GetCurrent().Owner!
-    .IsWellKnown(System.Security.Principal.WellKnownSidType.BuiltinAdministratorsSid))
-{
-    Log.Warning("La app no está corriendo como administrador. Algunos sensores pueden no funcionar.");
-}
 
 builder.Host.UseSerilog();
 
@@ -36,11 +42,17 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
             "http://localhost:5173",
             "https://localhost:5173",
-            "http://localhost:5013"
+            "http://localhost:5000",
+            "https://localhost:7151"
         )
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
+});
+
+builder.Services.AddSpaStaticFiles(config =>
+{
+    config.RootPath = "wwwroot";
 });
 
 var app = builder.Build();
@@ -53,6 +65,14 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("ReactApp");
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.MapMonitorEndpoints();
+
+app.UseSpa(spa =>
+{
+    spa.Options.SourcePath = "wwwroot";
+});
 
 app.Run();

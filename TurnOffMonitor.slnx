@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="TurnOffMonitor.API/TurnOffMonitor.API.csproj" />
+  <Project Path="TurnOffMonitor.App/TurnOffMonitor.App.csproj" Id="681dda67-8df1-41ff-8a14-55eb861e905c" />
 </Solution>

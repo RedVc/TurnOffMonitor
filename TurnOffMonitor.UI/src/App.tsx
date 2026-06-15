@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Power, PowerOff, Cpu, Monitor } from "lucide-react";
 import iconImg from "./assets/icon.png";
 
-const API = "https://localhost:7151";
+const API = window.location.origin;
 
 interface Temperatures {
   cpuTemperature: number;
@@ -99,11 +99,17 @@ export default function App() {
 
   useEffect(() => {
     const checkBackend = () => {
-      fetch(`${API}/api/monitor/status`)
-        .then(r => r.json())
-        .then(() => setBackendOnline(true))
-        .catch(() => setBackendOnline(false));
-    };
+    fetch(`${API}/api/monitor/status`)
+      .then(r => r.json())
+      .then(data => {
+        console.log("Backend OK:", data);
+        setBackendOnline(true);
+      })
+      .catch(err => {
+        console.log("Backend FAIL:", err.message);
+        setBackendOnline(false);
+      });
+  };
     checkBackend();
     const interval = setInterval(checkBackend, 5000);
     return () => clearInterval(interval);
@@ -126,10 +132,21 @@ export default function App() {
   useEffect(() => {
     if (backendOnline !== true) return;
     const fetchData = () => {
-      fetch(`${API}/api/temperatures`).then(r => r.json()).then(setTemps).catch(() => {});
-      fetch(`${API}/api/hardware/cpu-sensor-readings`).then(r => r.json()).then((readings: SensorReading[]) => setCpuSensorReadings(readings)).catch(() => {});
-      fetch(`${API}/api/hardware/gpu-sensor-readings`).then(r => r.json()).then((readings: SensorReading[]) => setGpuSensorReadings(readings)).catch(() => {});
-    };
+    fetch(`${API}/api/temperatures`)
+      .then(r => r.json())
+      .then(setTemps)
+      .catch(err => console.log("Temps FAIL:", err.message));
+
+    fetch(`${API}/api/hardware/cpu-sensor-readings`)
+      .then(r => r.json())
+      .then((readings: SensorReading[]) => setCpuSensorReadings(readings))
+      .catch(err => console.log("CPU sensors FAIL:", err.message));
+
+    fetch(`${API}/api/hardware/gpu-sensor-readings`)
+      .then(r => r.json())
+      .then((readings: SensorReading[]) => setGpuSensorReadings(readings))
+      .catch(err => console.log("GPU sensors FAIL:", err.message));
+  };
     fetchData();
     const interval = setInterval(fetchData, 3000);
     return () => clearInterval(interval);
